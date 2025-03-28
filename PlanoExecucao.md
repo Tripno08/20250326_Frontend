@@ -28,7 +28,8 @@ Dashboard Básico (1-2 semanas)
 [x] Criar layout responsivo principal
 [x] Implementar navegação global
 [x] Desenvolver cards de métricas simples
-[ ] Criar estrutura de filtros
+[x] Criar estrutura de filtros
+[x] Implementar visualização RTI/MTSS básica
 
 Fase 2: Módulos Essenciais (8-10 semanas)
 Gestão de Estudantes (2-3 semanas)
@@ -38,7 +39,7 @@ Gestão de Estudantes (2-3 semanas)
 [ ] Implementar upload e gestão de documentos
 
 RTI/MTSS Core (2-3 semanas)
-[ ] Criar visualização da pirâmide RTI
+[ ] Criar visualização da pirâmide RTI - [Parcialmente implementado no dashboard]
 [ ] Implementar classificação por nível (Tier 1, 2, 3)
 [ ] Desenvolver planejamento de intervenções
 [ ] Implementar monitoramento de progresso
@@ -97,9 +98,9 @@ Dashboard de Progresso do Projeto
 
 Status Atual
 Fase: Fundação
-Progresso Total: 48%
+Progresso Total: 52%
 Status do Ambiente: Configurado e funcionando
-Próximos Passos: Criar estrutura de filtros para dashboard, iniciar implementação da gestão de estudantes
+Próximos Passos: Iniciar implementação da gestão de estudantes, aprimorar visualização RTI/MTSS
 
 Tarefas Concluídas
 Configuração de ambiente de desenvolvimento
@@ -125,14 +126,16 @@ Configuração do MSW para mocks de API independentes do backend
 Criação de fábricas de dados para gerar dados de teste realistas
 Implementação de handlers para autenticação e gestão de estudantes
 Criação de sistema de tratamento de erros centralizado com notificações
-
+Implementação da estrutura base do dashboard com métricas principais
+Implementação da visualização de distribuição RTI/MTSS no dashboard
+Criação do componente de listagem de estudantes que precisam de atenção
+Estruturação do layout responsivo para diferentes dispositivos
 
 Próximas Entregas
-Criar estrutura de filtros para dashboard
 Implementar gestão de estudantes
-Desenvolver visualização RTI/MTSS básica
-Implementar avaliações e rastreios
+Desenvolver módulo de avaliações e rastreios
 Criar módulo de equipes e colaboração
+Implementar visualizações avançadas com D3.js e Nivo
 
 Riscos e Mitigações
 Risco: Conflitos de versão entre bibliotecas
