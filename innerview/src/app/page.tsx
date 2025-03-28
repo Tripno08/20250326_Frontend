@@ -1,72 +1,295 @@
 "use client";
 
-import Link from 'next/link';
-import { Button } from '@mui/material';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  Box, 
+  Button, 
+  Typography, 
+  Container, 
+  Paper,
+  Grid,
+  useTheme,
+  useMediaQuery
+} from '@mui/material';
+import Image from 'next/image';
+import { 
+  Login as LoginIcon,
+  PersonAdd as RegisterIcon,
+  School as SchoolIcon,
+  Analytics as AnalyticsIcon,
+  Assessment as AssessmentIcon,
+  Groups as TeamsIcon
+} from '@mui/icons-material';
+import { useAuthStore } from '@/store/slices/authSlice';
 
-export default function Home() {
+export default function WelcomePage() {
+  const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  
+  useEffect(() => {
+    // Se já estiver autenticado, redirecionar para o dashboard
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+  
+  const features = [
+    { 
+      icon: <SchoolIcon fontSize="large" />, 
+      title: 'Gestão de Estudantes', 
+      description: 'Acompanhe o progresso individual de cada estudante com perfis detalhados e documentação completa.'
+    },
+    { 
+      icon: <AnalyticsIcon fontSize="large" />, 
+      title: 'RTI/MTSS', 
+      description: 'Implementação completa dos níveis de suporte, classificação e planejamento de intervenções.'
+    },
+    { 
+      icon: <AssessmentIcon fontSize="large" />, 
+      title: 'Avaliações e Rastreios', 
+      description: 'Ferramentas de avaliação e acompanhamento para identificação precoce de necessidades.'
+    },
+    { 
+      icon: <TeamsIcon fontSize="large" />, 
+      title: 'Colaboração em Equipe', 
+      description: 'Trabalhe em conjunto com outros educadores para oferecer o melhor suporte possível.'
+    }
+  ];
+  
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-100 to-white">
-      <div className="max-w-3xl mx-auto text-center">
-        <h1 className="text-5xl font-bold text-blue-800 mb-6">
-          Innerview
-        </h1>
-        <h2 className="text-2xl text-blue-600 mb-8">
-          Plataforma Educacional RTI/MTSS
-        </h2>
-        
-        <p className="text-lg text-gray-700 mb-12">
-          Uma plataforma educacional avançada focada em intervenções, monitoramento e 
-          suporte ao framework RTI/MTSS. Nossa solução oferece visualizações de dados 
-          superiores, integração perfeita com plataformas educacionais existentes e 
-          suporte à tomada de decisão baseada em evidências.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/login" passHref>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              size="large"
-              className="px-8 py-3"
+    <Box 
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
+        py: 4
+      }}
+    >
+      {/* Header */}
+      <Container maxWidth="lg">
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            mb: 8,
+            flexDirection: { xs: 'column', sm: 'row' }
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, sm: 0 } }}>
+            <Image
+              src="/logo.png"
+              alt="Innerview Logo"
+              width={40}
+              height={40}
+            />
+            <Typography 
+              variant="h4" 
+              component="h1" 
+              sx={{ 
+                ml: 1,
+                fontWeight: 700,
+                background: 'linear-gradient(90deg, #1976d2 0%, #5e35b1 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
             >
-              Entrar
-            </Button>
-          </Link>
-          <Link href="/register" passHref>
+              Innerview
+            </Typography>
+          </Box>
+          <Box>
             <Button 
               variant="outlined" 
               color="primary" 
-              size="large"
-              className="px-8 py-3"
+              sx={{ mr: 2 }}
+              onClick={() => router.push('/login')}
             >
-              Registrar
+              Entrar
             </Button>
-          </Link>
-        </div>
+            <Button 
+              variant="contained" 
+              color="primary"
+              onClick={() => router.push('/register')}
+            >
+              Cadastrar
+            </Button>
+          </Box>
+        </Box>
         
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold text-blue-700 mb-3">Intervenções Baseadas em Evidências</h3>
-            <p className="text-gray-600">
-              Acesse uma biblioteca abrangente de intervenções comprovadas e personalize-as para suas necessidades.
-            </p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold text-blue-700 mb-3">Monitoramento de Progresso</h3>
-            <p className="text-gray-600">
-              Acompanhe o crescimento dos estudantes com visualizações claras e insights acionáveis.
-            </p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold text-blue-700 mb-3">Colaboração em Equipe</h3>
-            <p className="text-gray-600">
-              Facilite a comunicação e o trabalho conjunto entre professores, especialistas e administradores.
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
+        {/* Hero Section */}
+        <Box sx={{ mb: 10 }}>
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <Typography 
+                variant="h3" 
+                component="h2"
+                fontWeight="bold"
+                gutterBottom
+              >
+                Plataforma completa para gestão RTI/MTSS
+              </Typography>
+              <Typography 
+                variant="h6" 
+                component="h3"
+                color="text.secondary"
+                sx={{ mb: 4 }}
+              >
+                Otimize o suporte educacional com nossa solução integrada para monitoramento, intervenção e avaliação.
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  size="large"
+                  startIcon={<LoginIcon />}
+                  onClick={() => router.push('/login')}
+                  fullWidth={isMobile}
+                  sx={{ px: 4, py: 1.5 }}
+                >
+                  Começar Agora
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  color="primary"
+                  size="large"
+                  startIcon={<RegisterIcon />}
+                  onClick={() => router.push('/register')}
+                  fullWidth={isMobile}
+                  sx={{ px: 4, py: 1.5 }}
+                >
+                  Criar Conta
+                </Button>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Paper 
+                elevation={6} 
+                sx={{ 
+                  borderRadius: 4, 
+                  overflow: 'hidden',
+                  height: { xs: 300, md: 400 },
+                  position: 'relative'
+                }}
+              >
+                <Image
+                  src="/hero-image.jpg"
+                  alt="Plataforma Innerview"
+                  fill
+                  style={{ objectFit: 'cover' }}
+                />
+              </Paper>
+            </Grid>
+          </Grid>
+        </Box>
+        
+        {/* Features Section */}
+        <Typography 
+          variant="h4" 
+          component="h2" 
+          align="center" 
+          gutterBottom
+          fontWeight="bold"
+          sx={{ mb: 6 }}
+        >
+          Recursos Principais
+        </Typography>
+        
+        <Grid container spacing={4} sx={{ mb: 10 }}>
+          {features.map((feature, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Paper 
+                elevation={3} 
+                sx={{ 
+                  p: 4, 
+                  height: '100%', 
+                  borderRadius: 4,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-5px)',
+                    boxShadow: 6
+                  }
+                }}
+              >
+                <Box 
+                  sx={{ 
+                    color: 'primary.main', 
+                    mb: 2,
+                    display: 'flex',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {feature.icon}
+                </Box>
+                <Typography 
+                  variant="h6" 
+                  component="h3" 
+                  align="center" 
+                  gutterBottom
+                  fontWeight="bold"
+                >
+                  {feature.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" align="center">
+                  {feature.description}
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+        
+        {/* CTA Section */}
+        <Paper 
+          elevation={4} 
+          sx={{ 
+            p: { xs: 4, md: 6 }, 
+            borderRadius: 4,
+            background: 'linear-gradient(135deg, #1976d2 0%, #5e35b1 100%)',
+            color: 'white',
+            mb: 6
+          }}
+        >
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={12} md={8}>
+              <Typography variant="h4" component="h2" fontWeight="bold" gutterBottom>
+                Pronto para transformar o suporte educacional?
+              </Typography>
+              <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
+                Comece hoje mesmo e melhore os resultados dos seus estudantes com nossa plataforma RTI/MTSS.
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
+              <Button 
+                variant="contained" 
+                color="secondary"
+                size="large"
+                fullWidth={isMobile}
+                onClick={() => router.push('/register')}
+                sx={{ 
+                  px: 4, 
+                  py: 1.5, 
+                  bgcolor: 'white', 
+                  color: 'primary.main',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                  }
+                }}
+              >
+                Criar Sua Conta Agora
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
+        
+        {/* Footer */}
+        <Box sx={{ pt: 4, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            © {new Date().getFullYear()} Innerview. Todos os direitos reservados.
+          </Typography>
+        </Box>
+      </Container>
+    </Box>
   );
 }
