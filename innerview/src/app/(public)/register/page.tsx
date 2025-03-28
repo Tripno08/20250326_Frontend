@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { TextField, Button, Paper, Typography, Box, Alert, MenuItem, FormControl, InputLabel, Select, SelectChangeEvent } from '@mui/material';
+import { TextField, Button, Paper, Typography, Box, Alert, MenuItem, FormControl, InputLabel, Select, SelectChangeEvent, IconButton } from '@mui/material';
 import { CargoUsuario } from '@/types';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -63,6 +64,10 @@ export default function RegisterPage() {
     }
   };
   
+  const handleBackToHome = () => {
+    router.push('/');
+  };
+  
   return (
     <Box 
       sx={{ 
@@ -80,9 +85,23 @@ export default function RegisterPage() {
           p: 4, 
           maxWidth: 500,
           width: '100%',
-          my: 4
+          my: 4,
+          position: 'relative'
         }}
       >
+        <IconButton 
+          aria-label="voltar para página inicial" 
+          onClick={handleBackToHome}
+          sx={{ 
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            color: 'text.secondary'
+          }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
+        
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Innerview
         </Typography>

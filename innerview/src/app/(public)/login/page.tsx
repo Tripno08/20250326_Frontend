@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { TextField, Button, Paper, Typography, Box, Alert } from '@mui/material';
+import { TextField, Button, Paper, Typography, Box, Alert, IconButton } from '@mui/material';
 import { useAuthStore } from '@/store/slices/authSlice';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { CargoUsuario } from '@/types';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,7 +34,7 @@ export default function LoginPage() {
             id: '1',
             email: 'admin@exemplo.com',
             nome: 'Administrador',
-            cargo: 'ADMIN',
+            cargo: CargoUsuario.ADMIN,
             criadoEm: new Date(),
             atualizadoEm: new Date(),
           },
@@ -49,6 +51,10 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const handleBackToHome = () => {
+    router.push('/');
   };
   
   return (
@@ -68,8 +74,22 @@ export default function LoginPage() {
           p: 4, 
           maxWidth: 400,
           width: '100%',
+          position: 'relative'
         }}
       >
+        <IconButton 
+          aria-label="voltar para página inicial" 
+          onClick={handleBackToHome}
+          sx={{ 
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            color: 'text.secondary'
+          }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
+        
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Innerview
         </Typography>
