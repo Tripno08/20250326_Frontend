@@ -1,0 +1,1273 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                        String                  @id @default(uuid())
+  email                     String                  @unique @db.VarChar(255)
+  senha                     String
+  nome                      String
+  cargo                     CargoUsuario            @default(PROFESSOR)
+  criadoEm                  DateTime                @default(now())
+  atualizadoEm              DateTime                @updatedAt
+  avatar                    String?
+  comunicacoesTutores       ComunicacaoTutor[]
+  dashboards                ConfiguracaoDashboard[]
+  credenciais               Credenciais?
+  encaminhamentosAtribuidos Encaminhamento[]        @relation("EncaminhamentosAtribuidos")
+  encaminhamentosCriados    Encaminhamento[]        @relation("EncaminhamentosCriados")
+  estudantes                Estudante[]
+  feedbacks                 Feedback[]
+  membroEquipes             MembroEquipe[]
+  mensagensRecebidas        Mensagem[]              @relation("MensagensRecebidas")
+  mensagensEnviadas         Mensagem[]              @relation("MensagensEnviadas")
+  modelosRelatorio          ModeloRelatorio[]
+  notificacoes              Notificacao[]
+  participacaoReunioes      ParticipanteReuniao[]
+  rastreiosAplicados        Rastreio[]
+  recursosCriados           RecursoPedagogico[]
+  relatoriosGerados         RelatorioGerado[]
+  sessoesAplicadas          SessaoIntervencao[]
+  sincronizacoesUsuario     SincronizacaoUsuario[]
+  instituicoes              UsuarioInstituicao[]
+  auditorias                Auditoria[]
+  dadosAnonimizados         Boolean                 @default(false)
+  dataAnonimizacao          DateTime?
+  
+  // Relações de privacidade
+  consentimentos             Consentimento[]
+  solicitacoesExclusao        SolicitacaoExclusao[] @relation("SolicitacaoUsuario")
+  solicitacoesProcessadas     SolicitacaoExclusao[] @relation("ProcessadorSolicitacao")
+
+  // Relações para incidentes
+  incidentesReportados     IncidenteSeguranca[]    @relation("ReportouIncidente")
+  incidentesResponsavel    IncidenteSeguranca[]    @relation("ResponsavelIncidente")
+  atualizacoesIncidente    AtualizacaoIncidente[]
+
+  @@index([email])
+  @@map("usuarios")
+}
+
+model Credenciais {
+  id           String   @id @default(uuid())
+  senha        String
+  salt         String
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  usuarioId    String   @unique
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("credenciais")
+}
+
+model Estudante {
+  id                  String                 @id @default(uuid())
+  nome                String
+  serie               String
+  dataNascimento      DateTime
+  criadoEm            DateTime               @default(now())
+  atualizadoEm        DateTime               @updatedAt
+  usuarioId           String
+  instituicaoId       String?
+  avaliacoes          Avaliacao[]
+  comunicacoesTutores ComunicacaoTutor[]
+  encaminhamentos     Encaminhamento[]
+  dificuldades        EstudanteDificuldade[]
+  Instituicao         Instituicao?           @relation(fields: [instituicaoId], references: [id], map: "estudantes_instituicao_fk")
+  usuario             Usuario                @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  equipes             EstudanteEquipe[]
+  HistoricoDados      HistoricoDados[]
+  intervencoes        Intervencao[]
+  mensagens           Mensagem[]
+  PrevisaoEstudante   PrevisaoEstudante[]
+  rastreios           Rastreio[]
+  dadosAnonimizados   Boolean                @default(false)
+  dataAnonimizacao    DateTime?
+
+  @@index([usuarioId])
+  @@index([instituicaoId], map: "estudantes_instituicaoId_fkey")
+  @@index([nome])
+  @@index([serie])
+  @@index([dataNascimento])
+  @@map("estudantes")
+}
+
+model Avaliacao {
+  id           String    @id @default(uuid())
+  data         DateTime
+  tipo         String
+  pontuacao    Float
+  observacoes  String?   @db.Text
+  metadados    Json?
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  estudanteId  String
+  estudante    Estudante @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@index([estudanteId])
+  @@index([data])
+  @@index([tipo])
+  @@index([estudanteId, data])
+  @@map("avaliacoes")
+}
+
+model Intervencao {
+  id                String                 @id @default(uuid())
+  dataInicio        DateTime
+  dataFim           DateTime?
+  tipo              String
+  descricao         String                 @db.Text
+  status            Status                 @default(ATIVO)
+  observacoes       String?                @db.Text
+  criadoEm          DateTime               @default(now())
+  atualizadoEm      DateTime               @updatedAt
+  estudanteId       String
+  intervencaoBaseId String?
+  Feedback          Feedback[]
+  estudante         Estudante              @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+  intervencaoBase   IntervencaoBase?       @relation(fields: [intervencaoBaseId], references: [id])
+  metas             Meta[]
+  progressos        ProgressoIntervencao[]
+  sessoes           SessaoIntervencao[]
+
+  @@index([estudanteId])
+  @@index([intervencaoBaseId])
+  @@index([dataInicio])
+  @@index([status])
+  @@index([estudanteId, status])
+  @@map("intervencoes")
+}
+
+model IntegracaoPlataforma {
+  id                    String                 @id @default(uuid())
+  plataforma            Plataforma
+  nome                  String
+  clientId              String
+  clientSecret          String                 @db.Text
+  tenantId              String?
+  redirectUri           String
+  escopos               String
+  ativo                 Boolean                @default(true)
+  criadoEm              DateTime               @default(now())
+  atualizadoEm          DateTime               @updatedAt
+  deploymentsLti        DeploymentLti[]
+  sincronizacoesTurma   SincronizacaoTurma[]
+  sincronizacoesUsuario SincronizacaoUsuario[]
+  webhooks              Webhook[]
+  integrationLogs       IntegrationLog[]
+  
+  @@map("integracoes_plataforma")
+}
+
+model SincronizacaoTurma {
+  id                    String                 @id @default(uuid())
+  turmaExternaId        String
+  nomeTurma             String
+  ultimaSincronizacao   DateTime
+  criadoEm              DateTime               @default(now())
+  atualizadoEm          DateTime               @updatedAt
+  integracaoId          String
+  integracao            IntegracaoPlataforma   @relation(fields: [integracaoId], references: [id], onDelete: Cascade)
+  sincronizacoesUsuario SincronizacaoUsuario[]
+
+  @@index([integracaoId])
+  @@map("sincronizacoes_turma")
+}
+
+model SincronizacaoUsuario {
+  id                   String               @id @default(uuid())
+  usuarioExternoId     String
+  email                String
+  cargo                String
+  ultimaSincronizacao  DateTime
+  criadoEm             DateTime             @default(now())
+  atualizadoEm         DateTime             @updatedAt
+  usuarioId            String?
+  integracaoId         String
+  sincronizacaoTurmaId String?
+  integracao           IntegracaoPlataforma @relation(fields: [integracaoId], references: [id], onDelete: Cascade)
+  sincronizacaoTurma   SincronizacaoTurma?  @relation(fields: [sincronizacaoTurmaId], references: [id])
+  usuario              Usuario?             @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+  @@index([integracaoId])
+  @@index([sincronizacaoTurmaId])
+  @@map("sincronizacoes_usuario")
+}
+
+model Webhook {
+  id           String               @id @default(uuid())
+  url          String
+  segredo      String
+  eventos      String
+  ativo        Boolean              @default(true)
+  criadoEm     DateTime             @default(now())
+  atualizadoEm DateTime             @updatedAt
+  integracaoId String
+  integracao   IntegracaoPlataforma @relation(fields: [integracaoId], references: [id], onDelete: Cascade)
+
+  @@index([integracaoId])
+  @@map("webhooks")
+}
+
+model DeploymentLti {
+  id           String               @id @default(uuid())
+  deploymentId String
+  emissor      String
+  clientId     String
+  urlLoginAuth String
+  urlTokenAuth String
+  urlKeySet    String
+  ativo        Boolean              @default(true)
+  criadoEm     DateTime             @default(now())
+  atualizadoEm DateTime             @updatedAt
+  integracaoId String
+  integracao   IntegracaoPlataforma @relation(fields: [integracaoId], references: [id], onDelete: Cascade)
+
+  @@index([integracaoId])
+  @@map("deployments_lti")
+}
+
+model Equipe {
+  id              String            @id @default(uuid())
+  nome            String
+  descricao       String?           @db.Text
+  ativo           Boolean           @default(true)
+  criadoEm        DateTime          @default(now())
+  atualizadoEm    DateTime          @updatedAt
+  encaminhamentos Encaminhamento[]
+  estudantes      EstudanteEquipe[]
+  membros         MembroEquipe[]
+  reunioes        Reuniao[]
+
+  @@map("equipes")
+}
+
+model MembroEquipe {
+  id           String      @id @default(uuid())
+  cargo        CargoEquipe
+  dataEntrada  DateTime    @default(now())
+  dataSaida    DateTime?
+  ativo        Boolean     @default(true)
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+  usuarioId    String
+  equipeId     String
+  equipe       Equipe      @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+  usuario      Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([equipeId])
+  @@map("membros_equipe")
+}
+
+model EstudanteEquipe {
+  id             String    @id @default(uuid())
+  dataAtribuicao DateTime  @default(now())
+  dataRemocao    DateTime?
+  ativo          Boolean   @default(true)
+  criadoEm       DateTime  @default(now())
+  atualizadoEm   DateTime  @updatedAt
+  estudanteId    String
+  equipeId       String
+  equipe         Equipe    @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+  estudante      Estudante @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@index([estudanteId])
+  @@index([equipeId])
+  @@map("estudantes_equipe")
+}
+
+model Reuniao {
+  id              String                @id @default(uuid())
+  titulo          String
+  data            DateTime
+  local           String?
+  status          Status                @default(AGENDADO)
+  observacoes     String?               @db.Text
+  resumo          String?               @db.Text
+  criadoEm        DateTime              @default(now())
+  atualizadoEm    DateTime              @updatedAt
+  equipeId        String
+  pauta           String?               @db.Text
+  encaminhamentos Encaminhamento[]
+  participantes   ParticipanteReuniao[]
+  equipe          Equipe                @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+
+  @@index([equipeId])
+  @@map("reunioes")
+}
+
+model ParticipanteReuniao {
+  id           String   @id @default(uuid())
+  presente     Boolean  @default(false)
+  cargo        String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  usuarioId    String
+  reuniaoId    String
+  confirmado   Boolean  @default(false)
+  reuniao      Reuniao  @relation(fields: [reuniaoId], references: [id], onDelete: Cascade)
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([reuniaoId])
+  @@map("participantes_reuniao")
+}
+
+model ComunicacaoTutor {
+  id           String            @id @default(uuid())
+  tipo         TipoComunicacao
+  data         DateTime
+  assunto      String
+  conteudo     String            @db.Text
+  infoContato  String?
+  nomeContato  String?
+  status       StatusComunicacao @default(ENVIADO)
+  criadoEm     DateTime          @default(now())
+  atualizadoEm DateTime          @updatedAt
+  estudanteId  String
+  usuarioId    String
+  estudante    Estudante         @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+  usuario      Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([estudanteId])
+  @@index([usuarioId])
+  @@map("comunicacoes_tutor")
+}
+
+model Mensagem {
+  id             String     @id @default(uuid())
+  assunto        String
+  conteudo       String     @db.Text
+  lida           Boolean    @default(false)
+  criadoEm       DateTime   @default(now())
+  atualizadoEm   DateTime   @updatedAt
+  remetenteId    String
+  destinatarioId String
+  estudanteId    String?
+  destinatario   Usuario    @relation("MensagensRecebidas", fields: [destinatarioId], references: [id], onDelete: Cascade)
+  estudante      Estudante? @relation(fields: [estudanteId], references: [id])
+  remetente      Usuario    @relation("MensagensEnviadas", fields: [remetenteId], references: [id], onDelete: Cascade)
+
+  @@index([remetenteId])
+  @@index([destinatarioId])
+  @@index([estudanteId])
+  @@index([lida])
+  @@index([criadoEm])
+  @@index([destinatarioId, lida])
+  @@map("mensagens")
+}
+
+model Encaminhamento {
+  id               String     @id @default(uuid())
+  titulo           String
+  descricao        String     @db.Text
+  dataPrazo        DateTime?
+  status           Status     @default(PENDENTE)
+  prioridade       Prioridade @default(MEDIA)
+  dataConclusao    DateTime?
+  observacoes      String?    @db.Text
+  criadoEm         DateTime   @default(now())
+  atualizadoEm     DateTime   @updatedAt
+  estudanteId      String
+  atribuidoPara    String
+  criadoPor        String
+  equipeId         String?
+  reuniaoId        String?
+  atribuidoUsuario Usuario    @relation("EncaminhamentosAtribuidos", fields: [atribuidoPara], references: [id])
+  criadoUsuario    Usuario    @relation("EncaminhamentosCriados", fields: [criadoPor], references: [id])
+  equipe           Equipe?    @relation(fields: [equipeId], references: [id])
+  estudante        Estudante  @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+  reuniao          Reuniao?   @relation(fields: [reuniaoId], references: [id])
+
+  @@index([estudanteId])
+  @@index([atribuidoPara])
+  @@index([criadoPor])
+  @@index([equipeId])
+  @@index([reuniaoId])
+  @@index([status])
+  @@index([prioridade])
+  @@index([dataPrazo])
+  @@index([estudanteId, status])
+  @@map("encaminhamentos")
+}
+
+model Notificacao {
+  id           String          @id @default(uuid())
+  tipo         TipoNotificacao
+  titulo       String
+  conteudo     String          @db.Text
+  lida         Boolean         @default(false)
+  criadoEm     DateTime        @default(now())
+  atualizadoEm DateTime        @updatedAt
+  usuarioId    String
+  usuario      Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([tipo])
+  @@index([lida])
+  @@index([criadoEm])
+  @@index([usuarioId, lida])
+  @@map("notificacoes")
+}
+
+model DificuldadeAprendizagem {
+  id                    String                   @id @default(uuid())
+  nome                  String
+  descricao             String                   @db.Text
+  sintomas              String                   @db.Text
+  categoria             CategoriaDificuldade
+  status                Status                   @default(ATIVO)
+  metadados             Json?
+  criadoEm              DateTime                 @default(now())
+  atualizadoEm          DateTime                 @updatedAt
+  intervencoes          DificuldadeIntervencao[]
+  estudanteDificuldades EstudanteDificuldade[]
+
+  @@map("dificuldades_aprendizagem")
+}
+
+model EstudanteDificuldade {
+  id                String                  @id @default(uuid())
+  nivel             Nivel
+  dataIdentificacao DateTime                @default(now())
+  observacoes       String?                 @db.Text
+  criadoEm          DateTime                @default(now())
+  atualizadoEm      DateTime                @updatedAt
+  estudanteId       String
+  dificuldadeId     String
+  dificuldade       DificuldadeAprendizagem @relation(fields: [dificuldadeId], references: [id])
+  estudante         Estudante               @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@index([estudanteId])
+  @@index([dificuldadeId])
+  @@map("estudante_dificuldades")
+}
+
+model InstrumentoRastreio {
+  id             String               @id @default(uuid())
+  nome           String
+  descricao      String               @db.Text
+  categoria      CategoriaInstrumento
+  faixaEtaria    String
+  tempoAplicacao Int
+  instrucoes     String               @db.Text
+  ativo          Boolean              @default(true)
+  criadoEm       DateTime             @default(now())
+  atualizadoEm   DateTime             @updatedAt
+  indicadores    IndicadorRastreio[]
+  rastreios      Rastreio[]
+
+  @@map("instrumentos_rastreio")
+}
+
+model IndicadorRastreio {
+  id            String              @id @default(uuid())
+  nome          String
+  descricao     String              @db.Text
+  tipo          TipoIndicador
+  valorMinimo   Float
+  valorMaximo   Float
+  pontoCorte    Float
+  criadoEm      DateTime            @default(now())
+  atualizadoEm  DateTime            @updatedAt
+  instrumentoId String
+  instrumento   InstrumentoRastreio @relation(fields: [instrumentoId], references: [id], onDelete: Cascade)
+  resultados    ResultadoRastreio[]
+
+  @@index([instrumentoId])
+  @@map("indicadores_rastreio")
+}
+
+model Rastreio {
+  id            String              @id @default(uuid())
+  dataAplicacao DateTime
+  observacoes   String?             @db.Text
+  status        Status              @default(EM_ANDAMENTO)
+  criadoEm      DateTime            @default(now())
+  atualizadoEm  DateTime            @updatedAt
+  estudanteId   String
+  aplicadorId   String
+  instrumentoId String
+  aplicador     Usuario             @relation(fields: [aplicadorId], references: [id])
+  estudante     Estudante           @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+  instrumento   InstrumentoRastreio @relation(fields: [instrumentoId], references: [id])
+  resultados    ResultadoRastreio[]
+
+  @@index([estudanteId])
+  @@index([aplicadorId])
+  @@index([instrumentoId])
+  @@index([dataAplicacao])
+  @@index([status])
+  @@index([estudanteId, dataAplicacao])
+  @@map("rastreios")
+}
+
+model ResultadoRastreio {
+  id           String            @id @default(uuid())
+  valor        Float
+  nivelRisco   Nivel?
+  observacoes  String?           @db.Text
+  criadoEm     DateTime          @default(now())
+  atualizadoEm DateTime          @updatedAt
+  rastreioId   String
+  indicadorId  String
+  indicador    IndicadorRastreio @relation(fields: [indicadorId], references: [id], onDelete: Cascade)
+  rastreio     Rastreio          @relation(fields: [rastreioId], references: [id], onDelete: Cascade)
+
+  @@index([rastreioId])
+  @@index([indicadorId])
+  @@map("resultados_rastreio")
+}
+
+model IntervencaoBase {
+  id                   String                   @id @default(uuid())
+  nome                 String
+  descricao            String                   @db.Text
+  objetivo             String                   @db.Text
+  nivel                NivelIntervencao
+  area                 AreaIntervencao
+  tempoEstimado        Int
+  frequencia           FrequenciaAplicacao
+  materiaisNecessarios String?                  @db.Text
+  evidenciaCientifica  String?                  @db.Text
+  fonteEvidencia       String?
+  ativo                Boolean                  @default(true)
+  criadoEm             DateTime                 @default(now())
+  atualizadoEm         DateTime                 @updatedAt
+  dificuldades         DificuldadeIntervencao[]
+  intervencoes         Intervencao[]
+  kpis                 KpiIntervencao[]
+  protocolos           ProtocoloIntervencao[]
+  RecursoIntervencao   RecursoIntervencao[]
+
+  @@map("intervencoes_base")
+}
+
+model ProtocoloIntervencao {
+  id                  String               @id @default(uuid())
+  nome                String
+  descricao           String               @db.Text
+  nivel               NivelIntervencao
+  area                AreaIntervencao
+  duracaoSemanas      Int
+  frequenciaSemanal   Int
+  aplicacaoGrupo      Boolean
+  tamanhoMaximoGrupo  Int?
+  instituicaoId       String?
+  evidenciaCientifica String?              @db.Text
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  atividades          AtividadeProtocolo[]
+  resultadosEsperados ResultadoEsperado[]
+  instituicao         Instituicao?         @relation(fields: [instituicaoId], references: [id])
+
+  @@map("protocolos_intervencao")
+}
+
+model AtividadeProtocolo {
+  id                  String              @id @default(uuid())
+  nome                String
+  descricao           String              @db.Text
+  duracao             Int
+  materiais           String?             @db.Text
+  resultadosEsperados String              @db.Text
+  protocoloId         String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  protocolo           ProtocoloIntervencao @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+
+  @@map("atividades_protocolo")
+}
+
+model ResultadoEsperado {
+  id          String              @id @default(uuid())
+  descricao   String
+  indicador   String
+  valorAlvo   String
+  protocoloId String
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  protocolo   ProtocoloIntervencao @relation(fields: [protocoloId], references: [id], onDelete: Cascade)
+
+  @@map("resultados_esperados")
+}
+
+model ProgressoIntervencao {
+  id            String      @id @default(uuid())
+  intervencaoId String
+  data          DateTime
+  pontuacao     Float
+  observacoes   String      @db.Text
+  dificuldades  String?     @db.Text
+  proximosPassos String?    @db.Text
+  registradoPor String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  intervencao   Intervencao @relation(fields: [intervencaoId], references: [id])
+  registrador   Usuario     @relation(fields: [registradoPor], references: [id])
+
+  @@map("progressos_intervencao")
+}
+
+model SessaoIntervencao {
+  id                  String         @id @default(uuid())
+  data                DateTime
+  duracao             Int
+  status              Status         @default(AGENDADO)
+  observacoes         String?        @db.Text
+  materiaisUtilizados String?        @db.Text
+  desafiosEncontrados String?        @db.Text
+  proximosPassos      String?        @db.Text
+  criadoEm            DateTime       @default(now())
+  atualizadoEm        DateTime       @updatedAt
+  intervencaoId       String
+  aplicadorId         String
+  resultadosKpi       ResultadoKpi[]
+  aplicador           Usuario        @relation(fields: [aplicadorId], references: [id])
+  intervencao         Intervencao    @relation(fields: [intervencaoId], references: [id], onDelete: Cascade)
+
+  @@index([intervencaoId])
+  @@index([aplicadorId])
+  @@map("sessoes_intervencao")
+}
+
+model ResultadoKpi {
+  id           String            @id @default(uuid())
+  valor        Float
+  observacoes  String?           @db.Text
+  criadoEm     DateTime          @default(now())
+  atualizadoEm DateTime          @updatedAt
+  sessaoId     String
+  kpiId        String
+  kpi          KpiIntervencao    @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+  sessao       SessaoIntervencao @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+
+  @@index([sessaoId])
+  @@index([kpiId])
+  @@map("resultados_kpi")
+}
+
+model Meta {
+  id           String             @id @default(uuid())
+  titulo       String
+  descricao    String             @db.Text
+  tipo         TipoMeta
+  especifico   String             @db.Text
+  mensuravel   String             @db.Text
+  atingivel    String             @db.Text
+  relevante    String             @db.Text
+  temporal     String             @db.Text
+  dataInicio   DateTime
+  dataFim      DateTime
+  status       StatusMeta         @default(NAO_INICIADA)
+  observacoes  String?            @db.Text
+  criadoEm     DateTime           @default(now())
+  atualizadoEm DateTime           @updatedAt
+  intervencaoId String
+  intervencao  Intervencao        @relation(fields: [intervencaoId], references: [id], onDelete: Cascade)
+
+  @@index([intervencaoId])
+  @@index([dataInicio])
+  @@index([dataFim])
+  @@index([status])
+  @@map("metas")
+}
+
+model DificuldadeIntervencao {
+  id            String                  @id @default(uuid())
+  eficacia      Int
+  observacoes   String?                 @db.Text
+  criadoEm      DateTime                @default(now())
+  atualizadoEm  DateTime                @updatedAt
+  dificuldadeId String
+  intervencaoId String
+  dificuldade   DificuldadeAprendizagem @relation(fields: [dificuldadeId], references: [id], onDelete: Cascade)
+  intervencao   IntervencaoBase         @relation(fields: [intervencaoId], references: [id], onDelete: Cascade)
+
+  @@unique([dificuldadeId, intervencaoId])
+  @@index([dificuldadeId])
+  @@index([intervencaoId])
+  @@map("dificuldade_intervencoes")
+}
+
+model PrevisaoEstudante {
+  id            String    @id @default(uuid())
+  estudanteId   String
+  tipoPrevisao  String
+  probabilidade Float
+  recomendacoes String?   @db.Text
+  dataAnalise   DateTime  @default(now())
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
+  estudante     Estudante @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@index([estudanteId])
+  @@map("previsoes_estudante")
+}
+
+model HistoricoDados {
+  id            String    @id @default(uuid())
+  estudanteId   String
+  tipoMedicao   String
+  valorNumerico Float?
+  valorTexto    String?
+  data          DateTime
+  fonte         String
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
+  estudante     Estudante @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@index([estudanteId])
+  @@index([tipoMedicao, data])
+  @@index([estudanteId, tipoMedicao])
+  @@index([data])
+  @@map("historico_dados")
+}
+
+model ConfiguracaoDashboard {
+  id            String            @id @default(uuid())
+  usuarioId     String
+  titulo        String
+  layout        String            @db.Text
+  filtrosPadrao String?           @db.Text
+  compartilhado Boolean           @default(false)
+  criadoEm      DateTime          @default(now())
+  atualizadoEm  DateTime          @updatedAt
+  usuario       Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  paineis       PainelDashboard[]
+
+  @@index([usuarioId])
+  @@map("configuracoes_dashboard")
+}
+
+model PainelDashboard {
+  id                      String                @id @default(uuid())
+  configuracaoDashboardId String
+  tipo                    String
+  titulo                  String
+  configuracao            String                @db.Text
+  ordem                   Int
+  criadoEm                DateTime              @default(now())
+  atualizadoEm            DateTime              @updatedAt
+  configuracaoDashboard   ConfiguracaoDashboard @relation(fields: [configuracaoDashboardId], references: [id], onDelete: Cascade)
+
+  @@index([configuracaoDashboardId])
+  @@map("paineis_dashboard")
+}
+
+model Feedback {
+  id            String       @id @default(uuid())
+  intervencaoId String?
+  usuarioId     String
+  classificacao Int
+  comentario    String?      @db.Text
+  visibilidade  String
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+  intervencao   Intervencao? @relation(fields: [intervencaoId], references: [id])
+  usuario       Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([intervencaoId])
+  @@index([usuarioId])
+  @@map("feedbacks")
+}
+
+model RecursoPedagogico {
+  id            String               @id @default(uuid())
+  titulo        String
+  descricao     String               @db.Text
+  tipo          String
+  urlRecurso    String?
+  arquivoPath   String?
+  categoriasTag String
+  nivelSerie    String?
+  licenca       String?
+  criadoPorId   String?
+  ativo         Boolean              @default(true)
+  criadoEm      DateTime             @default(now())
+  atualizadoEm  DateTime             @updatedAt
+  intervencoes  RecursoIntervencao[]
+  criadoPor     Usuario?             @relation(fields: [criadoPorId], references: [id])
+
+  @@index([criadoPorId])
+  @@index([tipo])
+  @@map("recursos_pedagogicos")
+}
+
+model RecursoIntervencao {
+  id                  String            @id @default(uuid())
+  recursoPedagogicoId String
+  intervencaoBaseId   String
+  intervencaoBase     IntervencaoBase   @relation(fields: [intervencaoBaseId], references: [id], onDelete: Cascade)
+  recursoPedagogico   RecursoPedagogico @relation(fields: [recursoPedagogicoId], references: [id], onDelete: Cascade)
+
+  @@unique([recursoPedagogicoId, intervencaoBaseId])
+  @@index([recursoPedagogicoId])
+  @@index([intervencaoBaseId])
+  @@map("recursos_intervencao")
+}
+
+model ModeloRelatorio {
+  id                String            @id @default(uuid())
+  nome              String
+  descricao         String?           @db.Text
+  tipoRelatorio     String
+  estrutura         String            @db.Text
+  criadoPorId       String
+  compartilhado     Boolean           @default(false)
+  criadoEm          DateTime          @default(now())
+  atualizadoEm      DateTime          @updatedAt
+  criadoPor         Usuario           @relation(fields: [criadoPorId], references: [id], onDelete: Cascade)
+  relatoriosGerados RelatorioGerado[]
+
+  @@index([criadoPorId])
+  @@map("modelos_relatorio")
+}
+
+model RelatorioGerado {
+  id                String          @id @default(uuid())
+  modeloRelatorioId String
+  parametros        String?         @db.Text
+  arquivoPath       String
+  geradoPorId       String
+  criadoEm          DateTime        @default(now())
+  geradoPor         Usuario         @relation(fields: [geradoPorId], references: [id], onDelete: Cascade)
+  modeloRelatorio   ModeloRelatorio @relation(fields: [modeloRelatorioId], references: [id], onDelete: Cascade)
+
+  @@index([modeloRelatorioId])
+  @@index([geradoPorId])
+  @@map("relatorios_gerados")
+}
+
+model Instituicao {
+  id            String               @id @default(uuid())
+  nome          String
+  tipo          String
+  endereco      String?
+  configuracoes String?              @db.Text
+  ativo         Boolean              @default(true)
+  criadoEm      DateTime             @default(now())
+  atualizadoEm  DateTime             @updatedAt
+  estudantes    Estudante[]
+  usuarios      UsuarioInstituicao[]
+  politicasRetencao PoliticaRetencao[]
+
+  @@index([tipo])
+  @@map("instituicoes")
+}
+
+model UsuarioInstituicao {
+  id            String      @id @default(uuid())
+  usuarioId     String
+  instituicaoId String
+  cargo         String?
+  ativo         Boolean     @default(true)
+  criadoEm      DateTime    @default(now())
+  atualizadoEm  DateTime    @updatedAt
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Cascade)
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, instituicaoId])
+  @@index([usuarioId])
+  @@index([instituicaoId])
+  @@map("usuarios_instituicao")
+}
+
+model Auditoria {
+  id            String    @id @default(uuid())
+  usuarioId     String
+  acao          String
+  entidade      String
+  entidadeId    String?
+  detalhes      String?   @db.Text
+  ip            String?
+  userAgent     String?
+  criadoEm      DateTime  @default(now())
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([acao])
+  @@index([entidade])
+  @@index([criadoEm])
+  @@map("auditoria")
+}
+
+model IntegrationLog {
+  id            String   @id @default(uuid())
+  integrationId String
+  success       Boolean
+  error         String?
+  timestamp     DateTime @default(now())
+  metadata      Json?
+  integration   IntegracaoPlataforma @relation(fields: [integrationId], references: [id], onDelete: Cascade, map: "integration_log_integration_fk")
+
+  @@index([integrationId])
+  @@index([timestamp])
+  @@map("integration_logs")
+}
+
+model Insight {
+  id            String   @id @default(uuid())
+  titulo        String
+  descricao     String
+  tipo          String
+  nivelRisco    String
+  metricas      Json     @default("{}")
+  recomendacoes Json     @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("insights")
+}
+
+model Presenca {
+  id          String   @id @default(uuid())
+  estudanteId String
+  data        DateTime
+  presente    Boolean
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  estudante   Estudante @relation(fields: [estudanteId], references: [id])
+
+  @@index([estudanteId])
+}
+
+model Comportamento {
+  id          String   @id @default(uuid())
+  estudanteId String
+  data        DateTime
+  pontuacao   Float
+  descricao   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  estudante   Estudante @relation(fields: [estudanteId], references: [id])
+
+  @@index([estudanteId])
+}
+
+model Participacao {
+  id          String   @id @default(uuid())
+  estudanteId String
+  data        DateTime
+  nivel       Float
+  descricao   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  estudante   Estudante @relation(fields: [estudanteId], references: [id])
+
+  @@index([estudanteId])
+}
+
+model AvaliacaoDesenvolvimento {
+  id          String   @id @default(uuid())
+  estudanteId String
+  data        DateTime
+  pontuacao   Float
+  descricao   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  estudante   Estudante @relation(fields: [estudanteId], references: [id])
+
+  @@index([estudanteId])
+}
+
+model CriterioNivelIntervencao {
+  id                       String     @id @default(uuid())
+  instituicaoId            String     @unique
+  limiarUniversalSeletivo  Float
+  limiarSeletivoIntensivo  Float
+  semanasSemMelhoria       Int
+  percentualMelhoriaRetorno Float
+  semanasMelhoriaConsistente Int
+  criteriosAdicionais      String?    @db.Text
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
+  instituicao              Instituicao @relation(fields: [instituicaoId], references: [id])
+
+  @@map("criterios_nivel_intervencao")
+}
+
+enum CargoUsuario {
+  ADMIN
+  PROFESSOR
+  ESPECIALISTA
+  COORDENADOR
+  DIRETOR
+  ADMINISTRADOR
+  SECRETARIA
+  RESPONSAVEL
+  PSICOLOGO
+  ORIENTADOR
+  OUTRO
+  DPO // Responsável pela proteção de dados pessoais
+}
+
+enum TipoComunicacao {
+  EMAIL
+  TELEFONE
+  PRESENCIAL
+  CARTA
+  OUTRO
+}
+
+enum StatusComunicacao {
+  RASCUNHO
+  ENVIADO
+  ENTREGUE
+  LIDO
+  RESPONDIDO
+  FALHA
+}
+
+enum Prioridade {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum TipoNotificacao {
+  REUNIAO_AGENDADA
+  LEMBRETE_REUNIAO
+  ENCAMINHAMENTO_ATRIBUIDO
+  PRAZO_PROXIMO
+  PRAZO_VENCIDO
+  MENSAGEM_RECEBIDA
+  ESTUDANTE_ATUALIZADO
+  AVALIACAO_ADICIONADA
+  INTERVENCAO_ATUALIZADA
+  CONVITE_EQUIPE
+}
+
+enum Nivel {
+  BAIXO
+  MODERADO
+  ALTO
+  MUITO_ALTO
+}
+
+enum CategoriaDificuldade {
+  LEITURA
+  ESCRITA
+  MATEMATICA
+  ATENCAO
+  COMPORTAMENTO
+  COMUNICACAO
+  COORDENACAO_MOTORA
+  MEMORIA
+  ORGANIZACAO
+  OUTRO
+}
+
+enum CategoriaInstrumento {
+  ACADEMICO
+  COMPORTAMENTAL
+  SOCIOEMOCIONAL
+  COGNITIVO
+  LINGUAGEM
+  MOTOR
+  ATENCAO
+  OUTRO
+}
+
+enum TipoIndicador {
+  ESCALA_LIKERT
+  SIM_NAO
+  NUMERICO
+  MULTIPLA_ESCOLHA
+  TEXTO_LIVRE
+}
+
+enum NivelIntervencao {
+  UNIVERSAL
+  SELETIVO
+  INTENSIVO
+}
+
+enum AreaIntervencao {
+  LEITURA
+  ESCRITA
+  MATEMATICA
+  COMPORTAMENTO
+  ATENCAO
+  SOCIOEMOCIONAL
+  LINGUAGEM
+  OUTRO
+}
+
+enum FrequenciaAplicacao {
+  DIARIA
+  SEMANAL
+  QUINZENAL
+  MENSAL
+  PERSONALIZADA
+}
+
+enum TipoMeta {
+  ACADEMICA
+  COMPORTAMENTAL
+  SOCIAL
+  EMOCIONAL
+}
+
+enum StatusMeta {
+  NAO_INICIADA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+enum TipoConsentimento {
+  DADOS_PESSOAIS
+  DADOS_ESTUDANTE
+  COMPARTILHAMENTO_TERCEIROS
+  COMUNICACOES_MARKETING
+  COOKIES_ANALYTICS
+  PESQUISA_ANONIMA
+}
+
+enum StatusSolicitacao {
+  PENDENTE
+  APROVADA
+  RECUSADA
+  EM_PROCESSAMENTO
+  CONCLUIDA
+}
+
+enum EscopoExclusao {
+  DADOS_PESSOAIS
+  DADOS_ESTUDANTE
+  CONTA_COMPLETA
+}
+
+model Consentimento {
+  id                String           @id @default(uuid())
+  usuarioId         String
+  tipoConsentimento TipoConsentimento
+  consentido        Boolean
+  dataConsentimento DateTime
+  dataAtualizacao   DateTime
+  detalhes          String?         @db.Text
+  usuario           Usuario         @relation(fields: [usuarioId], references: [id])
+
+  @@map("consentimentos")
+}
+
+model SolicitacaoExclusao {
+  id                 String            @id @default(uuid())
+  usuarioId          String
+  motivo             String            @db.Text
+  escopo             EscopoExclusao
+  status             StatusSolicitacao
+  dataSolicitacao    DateTime
+  dataProcessamento  DateTime?
+  processadoPorId    String?
+  observacoes        String?           @db.Text
+  usuario            Usuario           @relation("SolicitacaoUsuario", fields: [usuarioId], references: [id])
+  processadoPor      Usuario?          @relation("ProcessadorSolicitacao", fields: [processadoPorId], references: [id])
+
+  @@map("solicitacoes_exclusao")
+}
+
+model PoliticaRetencao {
+  id                 String     @id @default(uuid())
+  tipoRegistro       String
+  periodoRetencaoMeses Int
+  descricao          String     @db.Text
+  instituicaoId      String
+  aplicacoesRealizadas Int      @default(0)
+  proximaAplicacao    DateTime?
+  ativo              Boolean    @default(true)
+  criadoEm           DateTime   @default(now())
+  atualizadoEm       DateTime   @updatedAt
+  instituicao        Instituicao @relation(fields: [instituicaoId], references: [id])
+
+  @@map("politicas_retencao")
+}
+
+enum GravidadeIncidente {
+  BAIXA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum TipoIncidente {
+  ACESSO_NAO_AUTORIZADO
+  VAZAMENTO_DADOS
+  PERDA_DADOS
+  MODIFICACAO_NAO_AUTORIZADA
+  RANSOMWARE
+  PHISHING
+  OUTRO
+}
+
+enum StatusIncidente {
+  ABERTO
+  EM_INVESTIGACAO
+  NOTIFICADO
+  MITIGADO
+  RESOLVIDO
+  ARQUIVADO
+}
+
+model IncidenteSeguranca {
+  id              String            @id @default(uuid())
+  titulo          String
+  descricao       String            @db.Text
+  tipo            TipoIncidente
+  gravidade       GravidadeIncidente
+  dataOcorrencia  DateTime
+  dataRegistro    DateTime          @default(now())
+  dadosAfetados   String            @db.Text
+  medidasTomadas  String?           @db.Text
+  status          StatusIncidente   @default(ABERTO)
+  responsavelId   String?           // ID do responsável por lidar com o incidente
+  instituicaoId   String            // Instituição afetada
+  reportadoPorId  String            // Usuário que reportou
+  
+  reportadoPor    Usuario           @relation("ReportouIncidente", fields: [reportadoPorId], references: [id])
+  responsavel     Usuario?          @relation("ResponsavelIncidente", fields: [responsavelId], references: [id])
+  instituicao     Instituicao       @relation(fields: [instituicaoId], references: [id])
+  notificacoes    NotificacaoIncidente[]
+  atualizacoes    AtualizacaoIncidente[]
+
+  @@map("incidentes_seguranca")
+}
+
+model NotificacaoIncidente {
+  id                String             @id @default(uuid())
+  incidenteId       String
+  dataNotificacao   DateTime           @default(now())
+  entidadeNotificada String            // Nome da entidade (ex: ANPD, usuários afetados)
+  meioNotificacao   String             // Email, carta, sistema, etc.
+  conteudo          String             @db.Text
+  comprovante       String?            // URL ou referência a documento comprobatório
+  
+  incidente         IncidenteSeguranca @relation(fields: [incidenteId], references: [id])
+
+  @@map("notificacoes_incidente")
+}
+
+model AtualizacaoIncidente {
+  id              String             @id @default(uuid())
+  incidenteId     String
+  dataAtualizacao DateTime           @default(now())
+  descricao       String             @db.Text
+  novoStatus      StatusIncidente?
+  usuarioId       String
+  
+  incidente       IncidenteSeguranca @relation(fields: [incidenteId], references: [id])
+  usuario         Usuario            @relation(fields: [usuarioId], references: [id])
+
+  @@map("atualizacoes_incidente")
+}
