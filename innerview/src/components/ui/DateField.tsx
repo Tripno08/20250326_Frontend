@@ -1,13 +1,9 @@
 "use client";
 
 import React from 'react';
-import { 
-  FormControl,
-  FormHelperText
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { FormHelperText, FormControl } from '@mui/material';
 import { Dayjs } from 'dayjs';
 import 'dayjs/locale/pt-br';
 
@@ -16,10 +12,9 @@ interface DateFieldProps {
   label: string;
   value: Dayjs | null;
   onChange: (date: Dayjs | null) => void;
-  error?: string;
-  touched?: boolean;
-  helperText?: string;
   required?: boolean;
+  error?: boolean;
+  helperText?: string;
   disabled?: boolean;
   minDate?: Dayjs;
   maxDate?: Dayjs;
@@ -29,15 +24,14 @@ interface DateFieldProps {
   disablePast?: boolean;
 }
 
-export const DateField: React.FC<DateFieldProps> = ({
+const DateField: React.FC<DateFieldProps> = ({
   name,
   label,
   value,
   onChange,
-  error,
-  touched,
-  helperText,
   required = false,
+  error = false,
+  helperText,
   disabled = false,
   minDate,
   maxDate,
@@ -46,22 +40,14 @@ export const DateField: React.FC<DateFieldProps> = ({
   disableFuture = false,
   disablePast = false
 }) => {
-  const showError = touched && Boolean(error);
-  const fieldHelperText = showError ? error : helperText;
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-      <FormControl 
-        fullWidth 
-        margin="normal" 
-        error={showError}
-        required={required}
-        disabled={disabled}
-      >
+      <FormControl fullWidth error={error}>
         <DatePicker
-          label={label}
+          label={label + (required ? ' *' : '')}
           value={value}
           onChange={onChange}
+          disabled={disabled}
           minDate={minDate}
           maxDate={maxDate}
           disableFuture={disableFuture}
@@ -70,19 +56,19 @@ export const DateField: React.FC<DateFieldProps> = ({
           views={views}
           slotProps={{
             textField: {
-              name,
-              error: showError,
-              required,
-              disabled,
               fullWidth: true,
-              inputProps: {
-                'aria-label': label,
-                'aria-required': required,
-              }
+              variant: 'outlined',
+              error: error,
+              name: name,
+              InputLabelProps: {
+                shrink: true,
+              },
             },
           }}
         />
-        {fieldHelperText && <FormHelperText>{fieldHelperText}</FormHelperText>}
+        {helperText && (
+          <FormHelperText>{helperText}</FormHelperText>
+        )}
       </FormControl>
     </LocalizationProvider>
   );
