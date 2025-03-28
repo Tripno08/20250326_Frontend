@@ -36,7 +36,7 @@ Gestão de Estudantes (2-3 semanas)
 [x] Implementar listagem e busca
 [x] Criar perfil detalhado do estudante
 [x] Desenvolver visualização de histórico acadêmico
-[ ] Implementar upload e gestão de documentos
+[x] Implementar upload e gestão de documentos
 
 RTI/MTSS Core (2-3 semanas)
 [x] Criar visualização da pirâmide RTI - [Parcialmente implementado no dashboard]
@@ -98,9 +98,9 @@ Dashboard de Progresso do Projeto
 
 Status Atual
 Fase: Módulos Essenciais
-Progresso Total: 67%
+Progresso Total: 70%
 Status do Ambiente: Configurado e funcionando
-Próximos Passos: Continuar implementação do módulo RTI/MTSS Core e iniciar Avaliações e Rastreios
+Próximos Passos: Implementar módulo completo de RTI/MTSS com classificação e monitoramento
 
 Tarefas Concluídas
 Configuração de ambiente de desenvolvimento
@@ -135,9 +135,10 @@ Criação de visualização detalhada de perfil de estudante com abas para difer
 Implementação do formulário de criação/edição de estudantes com validações
 Integração com API mock de estudantes via MSW
 Criação de serviço para gerenciamento de operações CRUD de estudantes
+Implementação de upload e gerenciamento de documentos para estudantes
+Criação da interface de visualização de documentos com preview e download
 
 Próximas Entregas
-Concluir implementação da gestão de estudantes com upload de documentos
 Desenvolver módulo completo de RTI/MTSS com classificação e monitoramento
 Iniciar módulo de avaliações e rastreios
 Implementar visualizações avançadas com D3.js e Nivo
